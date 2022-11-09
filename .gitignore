@@ -1,0 +1,7 @@
+.idea/
+*.HEIC
+__pycache__/
+backup
+grid_mask.xcf
+mask.pptx
+solve1/
