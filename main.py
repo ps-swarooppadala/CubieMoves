@@ -1,9 +1,12 @@
+from typing import Dict
+
 import cv2
 import logging
 
 import kociemba
 import numpy as np
-from numpy import sqrt
+import argparse
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -25,12 +28,20 @@ face_labels = ['U', 'R', 'F', 'D', 'L', 'B']
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("sub_folder", help="Image Folder (e.g. 'solve0'")
+    args = parser.parse_args()
+    logging.info(f"sub_folder: {args.sub_folder}")
+
     grid_mask = cv2.imread('grid_mask.png')
     dim = (768, 768)
     grid_mask = cv2.resize(grid_mask, dim, interpolation=cv2.INTER_LINEAR)
+
     lower_bound = np.array([200, 200, 200])
     upper_bound = np.array([255, 255, 255])
     mask_img = cv2.inRange(grid_mask, lower_bound, upper_bound)
+
+    os.chdir(args.sub_folder)
 
     masked_images = []
     for face in face_labels:
@@ -94,12 +105,12 @@ def main():
         if new_regions_to_find <= 1:
             break
 
-        if new_regions_to_find == new_regions_to_find:
+        if new_regions_to_find == regions_to_find:
             raise ValueError(f"Unable to improve finding stickers found only {7 - regions_to_find} colours")
 
         regions_to_find = new_regions_to_find
 
-    colors_to_labels = compute_labels(set(final_colours))
+    colors_to_labels = compute_labels(final_colours)
 
     encoding = ""
     for colour in final_colours:
@@ -122,47 +133,25 @@ def main():
     logging.info(f"solve:{solve}")
 
 
-# The colour relative positions match an Original Rubiks Spinmaster
-# The cube orientation is arbitrary with white on bottomright
-exact_colors_bgr_labels = {
-    (0, 0, 255): 'B',  # Red
-    (0, 128, 255): 'F',  # Orange
-    (255, 0, 0): 'R',  # Blue
-    (0, 255, 0): 'L',  # Green
-    (0, 255, 255): 'U',  # Yellow
-    (255, 255, 255): 'D',  # White
-}
-
-# The colour relative positions match an Original Rubiks Spinmaster
-# The cube orientation is arbitrary with white on bottom
-exact_colors_bgr_names = {
-    (0, 0, 255): 'Red',  # Red
-    (0, 128, 255): 'Orange',  # Orange
-    (255, 0, 0): 'Blue',  # Blue
-    (0, 255, 0): 'Green',  # Green
-    (0, 255, 255): 'Yellow',  # Yellow
-    (255, 255, 255): 'White',  # White
-}
+centres: dict[str, int] = {'U': 4 + (0 * 9), 'R': 4 + (1 * 9), 'F': 4 + (2 * 9), 'D': 4 + (3 * 9), 'L': 4 + (4 * 9),
+                           'B': 4 + (5 * 9)}
 
 
 def compute_labels(final_colours):
-    labels = {}
-
-    for color in final_colours:
-        b1, g1, r1 = color
-        distances = {}
-        for exact_color in exact_colors_bgr_labels:
-            b2, g2, r2 = exact_color
-            label = exact_colors_bgr_labels[exact_color]
-            sum_sqr = pow(b2 - b1, 2) + pow(g2 - g1, 2) + pow(r2 - r1, 2)
-            d = sqrt(sum_sqr)
-            distances[label] = d
-
-        # https://stackoverflow.com/a/62349962/329496
-        label = min(zip(distances.values(), distances.keys()))[1]
-        labels[color] = label
-
-    return labels
+    colors_to_labels = {}
+    u = final_colours[centres['U']]
+    colors_to_labels[u] = 'U'
+    r = final_colours[centres['R']]
+    colors_to_labels[r] = 'R'
+    f = final_colours[centres['F']]
+    colors_to_labels[f] = 'F'
+    d = final_colours[centres['D']]
+    colors_to_labels[d] = 'D'
+    l = final_colours[centres['L']]
+    colors_to_labels[l] = 'L'
+    b = final_colours[centres['B']]
+    colors_to_labels[b] = 'B'
+    return colors_to_labels
 
 
 def mask_found_colours(bounded_boxes, bounded_boxes_offsets, color_counts, sticker_stack, final_labels, found_boxes):
@@ -245,9 +234,6 @@ def analyze_colours(bounded_boxes, bounded_boxes_offsets, regions_to_find, stick
                 x_high = x2 + dx
                 y_low = y1 + dy
                 y_high = y2 + dy
-                # start_point = (x_low, y_low)
-                # end_point = (x_high, y_high)
-                # cv2.rectangle(kmeans, start_point, end_point, colors[i], thickness=2, lineType=cv2.LINE_8)
                 label_counts = {}
                 for x in range(x_low, x_high):
                     for y in range(y_low, y_high):
