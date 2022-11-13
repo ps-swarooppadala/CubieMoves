@@ -126,11 +126,11 @@ def main():
     logging.info(f"encoding: {encoding}")
     cv2.imshow('final_stickers', sticker_stack.copy())
 
-    cv2.waitKey()
-    cv2.destroyAllWindows()
-
     solve = kociemba.solve(encoding)
     logging.info(f"solve:{solve}")
+
+    cv2.waitKey()
+    cv2.destroyAllWindows()
 
 
 centres: dict[str, int] = {'U': 4 + (0 * 9), 'R': 4 + (1 * 9), 'F': 4 + (2 * 9), 'D': 4 + (3 * 9), 'L': 4 + (4 * 9),
