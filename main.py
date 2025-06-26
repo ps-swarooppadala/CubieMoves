@@ -3,7 +3,7 @@ from typing import Dict
 import cv2
 import logging
 
-import kociemba
+# import kociemba
 import numpy as np
 import argparse
 import os
@@ -126,8 +126,8 @@ def main():
     logging.info(f"encoding: {encoding}")
     cv2.imshow('final_stickers', sticker_stack.copy())
 
-    solve = kociemba.solve(encoding)
-    logging.info(f"solve:{solve}")
+    # solve = kociemba.solve(encoding)
+    # logging.info(f"solve:{solve}")
 
     cv2.waitKey()
     cv2.destroyAllWindows()
